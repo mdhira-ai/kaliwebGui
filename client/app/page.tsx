@@ -7,7 +7,10 @@ function page() {
 
   const [messages, setmessages] = useState<string[]>([])
   const [currenttime, setcurrenttime] = useState<string>("")
+
+  
   const wsclient = useRef<WebSocketClient | null>(null)
+  const [connectionstatus, setconnectionstatus] = useState<boolean>()
 
 
   const [value, setvalue] = useState<string>("")
@@ -17,6 +20,10 @@ function page() {
 
     wsclient.current.connect()
 
+    wsclient.current.onConnectionStatus((status) => {
+      setconnectionstatus(status)
+    })
+
     wsclient.current.getmessage((d) => {
       switch (d.data_type) {
         case "time":
@@ -24,6 +31,7 @@ function page() {
           break
 
         case "chat":
+          console.log(d.data.message)
           setmessages(prev => [...prev,
           `client id : ${d.data.client_id} says => ${d.data.message}`])
           break
@@ -62,14 +70,18 @@ function page() {
     <div>
 
 
+
       <Forsocket
+        status={connectionstatus!}
         send={sendmsg}
+        
         time={currenttime}
-        message={messages}
+        message={messages} //output
 
         value={value}
         setvalue={setvalue}
       />
+
     </div>
   );
 }

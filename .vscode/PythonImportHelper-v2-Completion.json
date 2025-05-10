@@ -86,6 +86,23 @@
         "documentation": {}
     },
     {
+        "label": "asyncio",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "asyncio",
+        "description": "asyncio",
+        "detail": "asyncio",
+        "documentation": {}
+    },
+    {
+        "label": "MTask",
+        "importPath": "mytasks",
+        "description": "mytasks",
+        "isExtraImport": true,
+        "detail": "mytasks",
+        "documentation": {}
+    },
+    {
         "label": "_Known",
         "kind": 6,
         "importPath": "client.node_modules.flatted.python.flatted",
@@ -207,7 +224,7 @@
         "kind": 5,
         "importPath": "server.main",
         "description": "server.main",
-        "peekOfCode": "app = FastAPI()\nsocketconn = socketio()\n@app.websocket(\"/ws/{client_id}\")\nasync def home(websocke: WebSocket, client_id: int):\n    await socketconn.connect(websocket=websocke)\n    print(f\"connected {client_id}\")\n    try:\n        while True:\n            data = await websocke.receive_json()\n            print(data)",
+        "peekOfCode": "app = FastAPI()\nsocketconn = socketio()\nnmap = MTask(socket=socketconn,messageport=\"nmap_log\")\n@app.websocket(\"/ws/{client_id}\")\nasync def home(websocket: WebSocket, client_id: int):\n    await socketconn.connect(websocket=websocket)\n    try:\n        while True:\n            data = await websocket.receive_json()\n            match(data['data_type']):",
         "detail": "server.main",
         "documentation": {}
     },
@@ -216,7 +233,16 @@
         "kind": 5,
         "importPath": "server.main",
         "description": "server.main",
-        "peekOfCode": "socketconn = socketio()\n@app.websocket(\"/ws/{client_id}\")\nasync def home(websocke: WebSocket, client_id: int):\n    await socketconn.connect(websocket=websocke)\n    print(f\"connected {client_id}\")\n    try:\n        while True:\n            data = await websocke.receive_json()\n            print(data)\n    except:",
+        "peekOfCode": "socketconn = socketio()\nnmap = MTask(socket=socketconn,messageport=\"nmap_log\")\n@app.websocket(\"/ws/{client_id}\")\nasync def home(websocket: WebSocket, client_id: int):\n    await socketconn.connect(websocket=websocket)\n    try:\n        while True:\n            data = await websocket.receive_json()\n            match(data['data_type']):\n                case \"nmap-start\":",
+        "detail": "server.main",
+        "documentation": {}
+    },
+    {
+        "label": "nmap",
+        "kind": 5,
+        "importPath": "server.main",
+        "description": "server.main",
+        "peekOfCode": "nmap = MTask(socket=socketconn,messageport=\"nmap_log\")\n@app.websocket(\"/ws/{client_id}\")\nasync def home(websocket: WebSocket, client_id: int):\n    await socketconn.connect(websocket=websocket)\n    try:\n        while True:\n            data = await websocket.receive_json()\n            match(data['data_type']):\n                case \"nmap-start\":\n                    cmd = f\"sudo nmap {data['message']}\"",
         "detail": "server.main",
         "documentation": {}
     }

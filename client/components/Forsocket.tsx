@@ -6,16 +6,28 @@ interface ForsocketProps {
     send: () => void,
     value: string,
     setvalue: (value: string) => void,
+    status: boolean
 
 }
 
-function Forsocket({ message, time, send, setvalue, value }: ForsocketProps) {
+function Forsocket({ message, time, send, setvalue, value, status }: ForsocketProps) {
     return (
         <div className="flex  flex-col items-center gap-7 justify-center h-screen">
+
+            <div
+                className='items-center flex flex-col'
+            >
             <h4>
-                server currenttime: {time}
+                Server status :{status ? "connected" : "disconnected"} <br/>
+            </h4>
+                
+
+            <h4>
+                server currenttime: {time} 
+
             </h4>
 
+            </div>
             <div className="flex  gap-2">
 
                 <Myinput

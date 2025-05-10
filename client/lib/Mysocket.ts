@@ -10,6 +10,7 @@ interface SocketMessage {
 export class WebSocketClient {
   private ws: WebSocket | null = null;
   private messagefromserver: ((data: SocketMessage) => void) | null = null;
+  private connstatusCallback: ((isconnected: boolean) => void) | null = null;
 
   constructor(private url: string) {}
 
@@ -18,22 +19,52 @@ export class WebSocketClient {
       this.ws = new WebSocket(this.url);
 
       this.ws.onopen = () => {
-        console.log("connected to the socket server");
+        console.log("✅ Connected to the socket server");
+
+        // status update function
+        if (this.connstatusCallback) {
+          this.connstatusCallback(true);
+        }
       };
+
+
       this.ws.onclose = () => {
-        console.log("disconnect from the server");
+        console.log("❌ Disconnected from the server");
+
+        // status update function
+        if (this.connstatusCallback) {
+          this.connstatusCallback(false);
+        }
       };
+
+
       this.ws.onerror = (error) => {
-        console.log("socket error", error);
+        console.log("⚠️ WebSocket error:", error);
+
+        // status update function
+        if (this.connstatusCallback) {
+          this.connstatusCallback(false);
+        }
       };
+
+
       this.ws.onmessage = (event) => {
         const data: SocketMessage = JSON.parse(event.data);
+
+        // message send to webUI
         if (this.messagefromserver) {
           this.messagefromserver(data);
         }
       };
+
+      
     } catch (error) {
-      console.error("failed to create server", error);
+      console.error("❌ Failed to create WebSocket:", error);
+
+      // status update function
+      if (this.connstatusCallback) {
+        this.connstatusCallback(false);
+      }
     }
   }
 
@@ -41,14 +72,19 @@ export class WebSocketClient {
     this.messagefromserver = callback;
   }
 
-  sendtoserver(data_type:string, data :string){
-    if(this.ws?.readyState == WebSocket.OPEN){
-      this.ws?.send(JSON.stringify({
-        data_type:data_type,
-        message:data
-      }))
-
+  sendtoserver(data_type: string, data: string) {
+    if (this.ws?.readyState == WebSocket.OPEN) {
+      this.ws?.send(
+        JSON.stringify({
+          data_type: data_type,
+          message: data,
+        })
+      );
     }
+  }
+
+  onConnectionStatus(callback: (isconnected: boolean) => void) {
+    this.connstatusCallback = callback;
   }
 
   disconnect() {
