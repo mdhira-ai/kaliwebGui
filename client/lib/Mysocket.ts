@@ -4,6 +4,7 @@ interface SocketMessage {
     client_id?: string;
     time?: string;
     message?: string;
+    status?: string
   };
 }
 

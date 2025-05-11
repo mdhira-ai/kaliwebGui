@@ -32,7 +32,7 @@ export default function page() {
 
   const [myscript, setmyscript] = useState("")
 
-  const [isScanning, setIsScanning] = useState(false);
+  const [isScanning, setIsScanning] = useState<string>("");
   const [scanResults, setScanResults] = useState<Array<string>>([]);
   const [scanHistory, setScanHistory] = useState<Array<{
     id: string;
@@ -174,13 +174,17 @@ export default function page() {
     Mysocket.current.connect()
 
     Mysocket.current.onConnectionStatus((status) => {
-      console.log(status)
+      setconnectionstatus(status)
     })
 
     Mysocket.current.getmessage((res) => {
       switch (res.data_type) {
         case "nmap_log":
           setScanResults(prev => [...prev, res.data.message!])
+
+          if (res.data.status) {
+            setIsScanning(res.data.status)
+          }
 
           break;
 
@@ -201,25 +205,33 @@ export default function page() {
   }, [])
 
 
-  function nmapstop(){
-    Mysocket.current?.sendtoserver("nmap-stop","")
+  function nmapstop() {
+    Mysocket.current?.sendtoserver("nmap-stop", "")
   }
 
 
   return (
-    <div className="min-h-screen  bg-gray-100">
-      <header className="bg-indigo-600 text-white shadow">
+    <div className="min-h-screen  ">
+
+    {/* Connection Status Alert Bar */}
+    <div className={`p-2 container mx-auto rounded-2xl mt-5 mb-8 text-white text-center ${connectionstatus ? 'bg-green-600' : 'bg-red-600'}`}>
+      {connectionstatus 
+        ? 'Connected to server' 
+        : 'Disconnected from server - Trying to reconnect...'}
+    </div>
+
+      <header className="rounded-lg mt-2 container mx-auto ">
         <div className="container mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold">Nmap WebGUI</h1>
           <p className="mt-2">Web interface for Nmap network scanning tool</p>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto  my-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Scan Form */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-slate-900 rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold mb-4">New Scan</h2>
               <form onSubmit={handleScan} className="space-y-4">
                 <div>
@@ -249,10 +261,10 @@ export default function page() {
                       id="scanType"
                       value={scanType}
                       onChange={(e) => handleScantype(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border  rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       {scanTypes.map((type) => (
-                        <option key={type.value} value={type.value}>
+                        <option className='bg-slate-800' key={type.value} value={type.value}>
                           {type.label}
                         </option>
                       ))}
@@ -268,10 +280,10 @@ export default function page() {
                       id="speed"
                       value={defaultspeed}
                       onChange={(e) => setdefaultspeed(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border  rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       {speed.map((s, index) => (
-                        <option key={index} value={s}>
+                        <option className='bg-slate-800' key={index} value={s}>
                           {s}
                         </option>
                       ))}
@@ -288,11 +300,11 @@ export default function page() {
                       id="command"
                       value={options}
                       onChange={(e) => setOptions(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border  rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       {Array.isArray(scandetails) ? (
                         scandetails.map((command: any, index: number) => (
-                          <option key={index} value={command}>
+                          <option className='bg-slate-800' key={index} value={command}>
                             {command}
                           </option>
                         ))
@@ -326,58 +338,65 @@ export default function page() {
                   />
                 </div>
 
+
+
                 <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={isScanning}
-                    className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${isScanning ? 'opacity-70 cursor-not-allowed' : ''}`}
-                  >
-                    {isScanning ? 'Scanning...' : 'Start Scan'}
-                  </button>
+                  {
+                    (isScanning === "cancelled" || isScanning === "completed" || !isScanning) && (
+
+                      <button
+                        type="submit"
+                        className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 `}
+                      >
+                        Start scan
+                      </button>
+                    )
+                  }
+
+
+
                 </div>
               </form>
+                  {
+                    isScanning === "running" && (
 
-              <div className="mt-4"></div>
-              <button
-                onClick={nmapstop}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              >
-                Stop Scan
-              </button>
+                      <button
+                        onClick={nmapstop}
+                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      >
+                        Stop Scan
+                      </button>
+                    )
+                  }
+
+
+
             </div>
 
             {/* Results */}
-            <div className="bg-white rounded-lg shadow">
+            <div className="bg-slate-900 rounded-lg shadow">
               <div className="p-4 border-b border-gray-200">
                 <h2 className="text-lg font-medium">Scan Results</h2>
               </div>
               <div className="p-4">
-                {scanResults ? (
-                  <textarea
-                    readOnly
-                    ref={(textarea) => {
-                      if (textarea) {
-                        textarea.scrollTop = textarea.scrollHeight;
-                      }
-                    }}
-                    value={scanResults.join('\n')}
-                  className="bg-gray-50 p-3 rounded text-sm font-mono w-full h-50"/>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    {isScanning ? (
-                      <p>Scanning in progress...</p>
-                    ) : (
-                      <p>No scan results yet. Run a scan to see results here.</p>
-                    )}
-                  </div>
-                )}
+
+                <textarea
+                  readOnly
+                  ref={(textarea) => {
+                    if (textarea) {
+                      textarea.scrollTop = textarea.scrollHeight;
+                    }
+                  }}
+                  value={scanResults.join('\n')}
+                  className="bg-slate-800 p-3  rounded text-sm font-mono w-full h-50" />
+
               </div>
             </div>
           </div>
 
           {/* History */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow">
+            <div className="bg-slate-900 rounded-lg shadow">
               <div className="p-4 border-b border-gray-200">
                 <h2 className="text-lg font-medium">Scan History</h2>
               </div>
@@ -404,7 +423,7 @@ export default function page() {
             </div>
 
             {/* Documentation */}
-            <div className="bg-white rounded-lg shadow mt-6">
+            <div className="bg-slate-900 rounded-lg shadow mt-6">
               <div className="p-4 border-b border-gray-200">
                 <h2 className="text-lg font-medium">Quick Reference</h2>
               </div>
@@ -413,19 +432,19 @@ export default function page() {
                   <div>
                     <h3 className="font-medium text-sm">Common Targets:</h3>
                     <ul className="text-xs text-gray-600 space-y-1 mt-1">
-                      <li>Single IP: <code className="bg-gray-100 px-1">192.168.1.1</code></li>
-                      <li>Hostname: <code className="bg-gray-100 px-1">example.com</code></li>
-                      <li>IP Range: <code className="bg-gray-100 px-1">192.168.1.1-100</code></li>
-                      <li>Subnet: <code className="bg-gray-100 px-1">10.0.0.0/24</code></li>
+                      <li>Single IP: <code className=" px-1">192.168.1.1</code></li>
+                      <li>Hostname: <code className=" px-1">example.com</code></li>
+                      <li>IP Range: <code className=" px-1">192.168.1.1-100</code></li>
+                      <li>Subnet: <code className="px-1">10.0.0.0/24</code></li>
                     </ul>
                   </div>
                   <div>
                     <h3 className="font-medium text-sm">Common Options:</h3>
                     <ul className="text-xs text-gray-600 space-y-1 mt-1">
-                      <li><code className="bg-gray-100 px-1">-p 80,443</code> - Scan specific ports</li>
-                      <li><code className="bg-gray-100 px-1">-Pn</code> - Skip host discovery</li>
-                      <li><code className="bg-gray-100 px-1">-sV</code> - Service version detection</li>
-                      <li><code className="bg-gray-100 px-1">-A</code> - Aggressive scan</li>
+                      <li><code className=" px-1">-p 80,443</code> - Scan specific ports</li>
+                      <li><code className=" px-1">-Pn</code> - Skip host discovery</li>
+                      <li><code className=" px-1">-sV</code> - Service version detection</li>
+                      <li><code className=" px-1">-A</code> - Aggressive scan</li>
                     </ul>
                   </div>
                 </div>

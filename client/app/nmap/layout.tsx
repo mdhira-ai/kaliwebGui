@@ -22,12 +22,18 @@ const navItems = [
         path: "/nmap/log",
     },
 
-];
+];   
 
 export default function layout({ children }: { children: React.ReactNode }) {
     return (
         <>
-        <Menubar>
+        <div
+            className='container m-auto '
+        >
+
+        <Menubar
+            
+        >
             <MenubarMenu>
                 <MenubarTrigger>Tools</MenubarTrigger>
                 <MenubarContent>
@@ -56,6 +62,7 @@ export default function layout({ children }: { children: React.ReactNode }) {
                 </MenubarContent>
             </MenubarMenu>
         </Menubar>
+        </div>
         {children}
 
 
