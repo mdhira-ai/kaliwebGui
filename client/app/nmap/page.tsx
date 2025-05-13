@@ -1,83 +1,87 @@
 // app/page.tsx
 "use client";
 
-import { WebSocketClient } from '@/lib/Mysocket';
-import { useEffect, useRef, useState } from 'react';
-// import { console } from 'react-hot-console';
+import { useEffect, useRef, useState } from "react";
 
 export default function page() {
-
   // websocket
-  const Mysocket = useRef<WebSocketClient | null>(null)
-  const [connectionstatus, setconnectionstatus] = useState<boolean>()
 
-
-
-
-  const [target, setTarget] = useState('');
-  const [scanType, setScanType] = useState('quick');
+  const [target, setTarget] = useState("");
+  const [scanType, setScanType] = useState("quick");
 
   const [scandetails, setscandetails] = useState<Array<string>>([
     "-sS (TCP SYN scan)",
     "-sT (TCP connect scan)",
     "-sU (UDP scan)",
     "-sP (Ping scan)",
-    "-sL (List scan)"
+    "-sL (List scan)",
   ]);
 
+  const [finalcmd, setfinalcmd] = useState("");
 
-  const [finalcmd, setfinalcmd] = useState('')
+  const [options, setOptions] = useState("-sS (TCP SYN scan)");
 
-  const [options, setOptions] = useState('-sS (TCP SYN scan)');
-
-  const [myscript, setmyscript] = useState("")
+  const [myscript, setmyscript] = useState("");
 
   const [isScanning, setIsScanning] = useState<string>("");
   const [scanResults, setScanResults] = useState<Array<string>>([]);
-  const [scanHistory, setScanHistory] = useState<Array<{
-    id: string;
-    target: string;
-    type: string;
-    timestamp: string;
-  }>>([]);
-
-
+  const [scanHistory, setScanHistory] = useState<
+    Array<{
+      id: string;
+      target: string;
+      type: string;
+      timestamp: string;
+    }>
+  >([]);
 
   const [defaultspeed, setdefaultspeed] = useState<string>("Default");
-  const [speed, setspeed] = useState<Array<string>>(["Default", "T1", "T2", "T3", "T4"])
-
+  const [speed, setspeed] = useState<Array<string>>([
+    "Default",
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+  ]);
 
   const scanTypes = [
     {
-      value: 'Basic', label: 'Basic Scanning Commands', command: [
+      value: "Basic",
+      label: "Basic Scanning Commands",
+      command: [
         "-sS (TCP SYN scan)",
         "-sT (TCP connect scan)",
         "-sU (UDP scan)",
         "-sP (Ping scan)",
-        "-sL (List scan)"
-      ]
+        "-sL (List scan)",
+      ],
     },
     {
-      value: 'Advanced', label: 'Advanced Scanning Techniques', command: [
+      value: "Advanced",
+      label: "Advanced Scanning Techniques",
+      command: [
         "-sA (ACK scan)",
         "-sW (Window scan)",
         "-sM (TCP Maimon scan)",
         "-sN (TCP Null scan)",
         "-sF (TCP FIN scan)",
         "-p- (Scan all ports)",
-        "--top-ports (Scan top ports: 20)"
-      ]
+        "--top-ports (Scan top ports: 20)",
+      ],
     },
     {
-      value: 'Script', label: 'Script Scanning', command: [
+      value: "Script",
+      label: "Script Scanning",
+      command: [
         "--script=default",
         "--script=vuln",
         "--script=discovery",
-        "--script=safe"
-      ]
+        "--script=safe",
+      ],
     },
     {
-      value: 'Firewall', label: 'Firewall/IDS Evasion', command: [
+      value: "Firewall",
+      label: "Firewall/IDS Evasion",
+      command: [
         "-f (Fragment packets)",
         "--mtu (Set custom MTU)",
         "-D (Decoy scan)",
@@ -85,140 +89,90 @@ export default function page() {
         "--data-length (Append random data)",
         "-PA (Use TCP ACK packets for discovery)",
         "-PS (Use TCP SYN packets for discovery)",
-        "--source-port (Randomize source port)"
-      ]
+        "--source-port (Randomize source port)",
+      ],
     },
     {
-      value: 'Service', label: 'Service and Vulnerability Detection', command: [
+      value: "Service",
+      label: "Service and Vulnerability Detection",
+      command: [
         "-sV (Service version detection)",
         "--version-intensity",
         "--version-light",
         "--version-all",
         "--script=vuln",
         "-O (OS detection)",
-        "-p (Scan for specific services)"
-      ]
+        "-p (Scan for specific services)",
+      ],
     },
     {
-      value: 'Network', label: 'Network Mapping', command: [
+      value: "Network",
+      label: "Network Mapping",
+      command: [
         "-sn (Ping scan)",
         "-PE (ICMP echo request)",
         "-PP (ICMP timestamp request)",
         "-PM (ICMP address mask request)",
         "-PO (Protocol ping)",
         "-sL (List targets without scanning)",
-        "--iflist (Show interfaces and routes) "
-      ]
+        "--iflist (Show interfaces and routes) ",
+      ],
     },
   ];
-
-
-
 
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault();
     if (!target.trim()) {
-      alert('Please enter a target');
+      alert("Please enter a target");
       return;
     }
 
-    let newCommand = '';
+    let newCommand = "";
     if (defaultspeed == "Default") {
-      newCommand = `${target.trim()} ${options.trim().split(' ')[0]} ${myscript}`;
+      newCommand = `${target.trim()} ${
+        options.trim().split(" ")[0]
+      } ${myscript}`;
       setfinalcmd(newCommand);
 
-      sendtonmap(newCommand)
-
-    }
-    else {
-      newCommand = `${target.trim()} ${defaultspeed} ${options.trim().split(' ')[0]} ${myscript}`;
+      sendtonmap(newCommand);
+    } else {
+      newCommand = `${target.trim()} ${defaultspeed} ${
+        options.trim().split(" ")[0]
+      } ${myscript}`;
       setfinalcmd(newCommand);
 
-      sendtonmap(newCommand)
+      sendtonmap(newCommand);
     }
 
-    setScanResults([])
+    setScanResults([]);
   };
 
   function sendtonmap(cmd: string) {
-
-    Mysocket.current?.sendtoserver("nmap-start", cmd)
-
-
+    // socket?.sendtoserver("nmap-start", cmd);  TODO: need to fix 
   }
-
-
-
 
   const loadHistoryItem = (target: string) => {
     setTarget(target);
   };
 
   const handleScantype = (type: string) => {
-    const selectedType = scanTypes.find(scanType => scanType.value === type);
+    const selectedType = scanTypes.find((scanType) => scanType.value === type);
     if (selectedType) {
       setscandetails(selectedType.command || []);
-      setOptions(selectedType.command[0])
+      setOptions(selectedType.command[0]);
     } else {
       setscandetails([]);
-
     }
-    setScanType(type)
+    setScanType(type);
   };
 
-
-
-  useEffect(() => {
-    Mysocket.current = new WebSocketClient("ws://localhost:8000/ws/122")
-
-    Mysocket.current.connect()
-
-    Mysocket.current.onConnectionStatus((status) => {
-      setconnectionstatus(status)
-    })
-
-    Mysocket.current.getmessage((res) => {
-      switch (res.data_type) {
-        case "nmap_log":
-          setScanResults(prev => [...prev, res.data.message!])
-
-          if (res.data.status) {
-            setIsScanning(res.data.status)
-          }
-
-          break;
-
-        default:
-          break;
-      }
-
-    })
-
-
-
-    return () => {
-      if (Mysocket) {
-        Mysocket.current?.disconnect()
-      }
-
-    }
-  }, [])
-
-
   function nmapstop() {
-    Mysocket.current?.sendtoserver("nmap-stop", "")
+    // socket?.sendtoserver("nmap-stop", "");  TODO: need to fix this function
   }
 
-
   return (
-    <div className="min-h-screen  ">
-
-    {/* Connection Status Alert Bar */}
-    <div className={`p-2 container mx-auto rounded-2xl mt-5 mb-8 text-white text-center ${connectionstatus ? 'bg-green-600' : 'bg-red-600'}`}>
-      {connectionstatus 
-        ? 'Connected to server' 
-        : 'Disconnected from server - Trying to reconnect...'}
-    </div>
+    <div className="max-h-max">
+      {/* Connection Status Alert Bar */}
 
       <header className="rounded-lg mt-2 container mx-auto ">
         <div className="container mx-auto px-4 py-6">
@@ -235,7 +189,10 @@ export default function page() {
               <h2 className="text-xl font-semibold mb-4">New Scan</h2>
               <form onSubmit={handleScan} className="space-y-4">
                 <div>
-                  <label htmlFor="target" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="target"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Target (IP, Hostname, or Network)
                   </label>
                   <input
@@ -248,13 +205,12 @@ export default function page() {
                   />
                 </div>
 
-                <div
-                  className='flex flex-row gap-4'
-                >
-
-
+                <div className="flex flex-row gap-4">
                   <div>
-                    <label htmlFor="scanType" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="scanType"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Scan Type
                     </label>
                     <select
@@ -264,7 +220,11 @@ export default function page() {
                       className="w-full px-3 py-2 border  rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       {scanTypes.map((type) => (
-                        <option className='bg-slate-800' key={type.value} value={type.value}>
+                        <option
+                          className="bg-slate-800"
+                          key={type.value}
+                          value={type.value}
+                        >
                           {type.label}
                         </option>
                       ))}
@@ -272,7 +232,10 @@ export default function page() {
                   </div>
 
                   <div>
-                    <label htmlFor="speed" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="speed"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Speed
                     </label>
 
@@ -283,16 +246,18 @@ export default function page() {
                       className="w-full px-3 py-2 border  rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     >
                       {speed.map((s, index) => (
-                        <option className='bg-slate-800' key={index} value={s}>
+                        <option className="bg-slate-800" key={index} value={s}>
                           {s}
                         </option>
                       ))}
                     </select>
                   </div>
 
-
                   <div>
-                    <label htmlFor="command" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="command"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Command
                     </label>
 
@@ -304,7 +269,11 @@ export default function page() {
                     >
                       {Array.isArray(scandetails) ? (
                         scandetails.map((command: any, index: number) => (
-                          <option className='bg-slate-800' key={index} value={command}>
+                          <option
+                            className="bg-slate-800"
+                            key={index}
+                            value={command}
+                          >
                             {command}
                           </option>
                         ))
@@ -312,20 +281,18 @@ export default function page() {
                         <option value="">No commands available</option>
                       )}
                     </select>
-
                   </div>
                 </div>
 
                 <div>
-                  <h4>
-                    Run: {finalcmd}
-                  </h4>
+                  <h4>Run: {finalcmd}</h4>
                 </div>
 
-
-
                 <div>
-                  <label htmlFor="options" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="options"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Additional Options
                   </label>
                   <input
@@ -338,39 +305,27 @@ export default function page() {
                   />
                 </div>
 
-
-
                 <div className="pt-2">
-                  {
-                    (isScanning === "cancelled" || isScanning === "completed" || !isScanning) && (
-
-                      <button
-                        type="submit"
-                        className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 `}
-                      >
-                        Start scan
-                      </button>
-                    )
-                  }
-
-
-
+                  {(isScanning === "cancelled" ||
+                    isScanning === "completed" ||
+                    !isScanning) && (
+                    <button
+                      type="submit"
+                      className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 `}
+                    >
+                      Start scan
+                    </button>
+                  )}
                 </div>
               </form>
-                  {
-                    isScanning === "running" && (
-
-                      <button
-                        onClick={nmapstop}
-                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                      >
-                        Stop Scan
-                      </button>
-                    )
-                  }
-
-
-
+              {isScanning === "running" && (
+                <button
+                  onClick={nmapstop}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Stop Scan
+                </button>
+              )}
             </div>
 
             {/* Results */}
@@ -379,7 +334,6 @@ export default function page() {
                 <h2 className="text-lg font-medium">Scan Results</h2>
               </div>
               <div className="p-4">
-
                 <textarea
                   readOnly
                   ref={(textarea) => {
@@ -387,9 +341,9 @@ export default function page() {
                       textarea.scrollTop = textarea.scrollHeight;
                     }
                   }}
-                  value={scanResults.join('\n')}
-                  className="bg-slate-800 p-3  rounded text-sm font-mono w-full h-50" />
-
+                  value={scanResults.join("\n")}
+                  className="bg-slate-800 p-3  rounded text-sm font-mono w-full h-50"
+                />
               </div>
             </div>
           </div>
@@ -404,20 +358,29 @@ export default function page() {
                 {scanHistory.length > 0 ? (
                   <ul className="space-y-2">
                     {scanHistory.map((scan) => (
-                      <li key={scan.id} className="border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                      <li
+                        key={scan.id}
+                        className="border-b border-gray-100 pb-2 last:border-0 last:pb-0"
+                      >
                         <button
                           onClick={() => loadHistoryItem(scan.target)}
                           className="text-left w-full hover:bg-gray-50 p-2 rounded"
                         >
-                          <p className="font-medium text-indigo-600">{scan.target}</p>
+                          <p className="font-medium text-indigo-600">
+                            {scan.target}
+                          </p>
                           <p className="text-sm text-gray-500">{scan.type}</p>
-                          <p className="text-xs text-gray-400">{scan.timestamp}</p>
+                          <p className="text-xs text-gray-400">
+                            {scan.timestamp}
+                          </p>
                         </button>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-center py-8 text-gray-500">No scan history yet</p>
+                  <p className="text-center py-8 text-gray-500">
+                    No scan history yet
+                  </p>
                 )}
               </div>
             </div>
@@ -432,19 +395,37 @@ export default function page() {
                   <div>
                     <h3 className="font-medium text-sm">Common Targets:</h3>
                     <ul className="text-xs text-gray-600 space-y-1 mt-1">
-                      <li>Single IP: <code className=" px-1">192.168.1.1</code></li>
-                      <li>Hostname: <code className=" px-1">example.com</code></li>
-                      <li>IP Range: <code className=" px-1">192.168.1.1-100</code></li>
-                      <li>Subnet: <code className="px-1">10.0.0.0/24</code></li>
+                      <li>
+                        Single IP: <code className=" px-1">192.168.1.1</code>
+                      </li>
+                      <li>
+                        Hostname: <code className=" px-1">example.com</code>
+                      </li>
+                      <li>
+                        IP Range: <code className=" px-1">192.168.1.1-100</code>
+                      </li>
+                      <li>
+                        Subnet: <code className="px-1">10.0.0.0/24</code>
+                      </li>
                     </ul>
                   </div>
                   <div>
                     <h3 className="font-medium text-sm">Common Options:</h3>
                     <ul className="text-xs text-gray-600 space-y-1 mt-1">
-                      <li><code className=" px-1">-p 80,443</code> - Scan specific ports</li>
-                      <li><code className=" px-1">-Pn</code> - Skip host discovery</li>
-                      <li><code className=" px-1">-sV</code> - Service version detection</li>
-                      <li><code className=" px-1">-A</code> - Aggressive scan</li>
+                      <li>
+                        <code className=" px-1">-p 80,443</code> - Scan specific
+                        ports
+                      </li>
+                      <li>
+                        <code className=" px-1">-Pn</code> - Skip host discovery
+                      </li>
+                      <li>
+                        <code className=" px-1">-sV</code> - Service version
+                        detection
+                      </li>
+                      <li>
+                        <code className=" px-1">-A</code> - Aggressive scan
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -453,8 +434,6 @@ export default function page() {
           </div>
         </div>
       </main>
-
-
     </div>
   );
 }
